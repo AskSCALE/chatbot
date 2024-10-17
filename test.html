@@ -251,8 +251,8 @@
     <script src="https://cdn.botpress.cloud/webchat/v2.2/inject.js"></script>
     <script src="https://files.bpcontent.cloud/2024/10/12/11/20241012114508-FMJPRO9S.js"></script>
     <script>
-      window.botpressWebChat.onEvent(
-        (event) => {
+      window.botpressWebChat.on("customEvent", (event) => {
+        state.latestEvent = event;
           if (event.type === "MESSAGE.RECEIVED") {
             console.log("A new message was received!");
             if (event.value.payload.text === "Please upload your file") {
