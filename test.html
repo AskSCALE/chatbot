@@ -251,24 +251,29 @@
     <script src="https://cdn.botpress.cloud/webchat/v2.2/inject.js"></script>
     <script src="https://files.bpcontent.cloud/2024/10/12/11/20241012114508-FMJPRO9S.js"></script>
     <script>
-      window.botpressWebChat.onEvent(
-        (event) => {
-          if(event.type === 'MESSAGE.RECEIVED') {
-          console.log('A new message was received!')
-            if(event.value.payload.text === 'Please upload your file') {
-              const fileInput = document.createElement('input');
-              fileInput.type = 'file';
-              fileInput.addEventListener('change', (event) => {
+      window.botpressWebChat.onEvent((event) => {
+        if (event.type === "MESSAGE.RECEIVED") {
+          console.log("A new message was received!");
+          if (event.value.payload.text === "Please upload your file") {
+            console.log("Preparing file input");
+            const uploadButton = document.createElement("button");
+            uploadButton.textContent = "Upload File";
+            document.body.appendChild(uploadButton);
+
+            uploadButton.addEventListener("click", () => {
+              const fileInput = document.createElement("input");
+              fileInput.type = "file";
+              fileInput.addEventListener("change", (event) => {
                 const file = event.target.files[0];
-                console.log('Selected file:', file);
+                console.log("Selected file:", file);
                 const reader = new FileReader();
-                reader.onload = async function(event) {
+                reader.onload = async function (event) {
                   const fileContent = event.target.result;
                   const title = file.name;
                   console.log("File content:", fileContent);
                   console.log("File name:", title);
                   window.botpressWebChat.sendPayload({
-                    type: 'trigger',
+                    type: "trigger",
                     payload: {
                       title: title,
                       content: fileContent,
@@ -276,13 +281,12 @@
                   });
                 };
                 reader.readAsText(file);
-              })
+              });
               fileInput.click();
-            }
+            });
           }
-        },
-        ['MESSAGE.RECEIVED']
-      )
+        }
+      });
     </script>
   </body>
 </html>
