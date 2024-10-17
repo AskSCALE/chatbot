@@ -251,38 +251,33 @@
     <script src="https://cdn.botpress.cloud/webchat/v2.2/inject.js"></script>
     <script src="https://files.bpcontent.cloud/2024/10/12/11/20241012114508-FMJPRO9S.js"></script>
     <script>
-      window.botpressWebChat.on("customEvent", (event) => {
-        state.latestEvent = event;
-          if (event.type === "MESSAGE.RECEIVED") {
-            console.log("A new message was received!");
-            if (event.value.payload.text === "Please upload your file") {
-              const fileInput = document.createElement("input");
-              fileInput.type = "file";
-              fileInput.addEventListener("change", (event) => {
-                const file = event.target.files[0];
-                console.log("Selected file:", file);
-                const reader = new FileReader();
-                reader.onload = async function (event) {
-                  const fileContent = event.target.result;
-                  const title = file.name;
-                  console.log("File content:", fileContent);
-                  console.log("File name:", title);
-                  window.botpressWebChat.sendPayload({
-                    type: "trigger",
-                    payload: {
-                      title: title,
-                      content: fileContent,
-                    },
-                  });
-                };
-                reader.readAsText(file);
+      window.botpress.on("messageSent", (message) => {
+        console.log("Message sent:", message);
+        if (message.value.payload.text === "Please upload your file") {
+          const fileInput = document.createElement("input");
+          fileInput.type = "file";
+          fileInput.addEventListener("change", (event) => {
+            const file = event.target.files[0];
+            console.log("Selected file:", file);
+            const reader = new FileReader();
+            reader.onload = async function (event) {
+              const fileContent = event.target.result;
+              const title = file.name;
+              console.log("File content:", fileContent);
+              console.log("File name:", title);
+              window.botpress.sendEvent({
+                type: "trigger",
+                payload: {
+                  title: title,
+                  content: fileContent,
+                },
               });
-              fileInput.click();
-            }
-          }
-        },
-        ["MESSAGE.RECEIVED"]
-      );
+            };
+            reader.readAsText(file);
+          });
+          fileInput.click();
+        }
+      });
     </script>
   </body>
 </html>
