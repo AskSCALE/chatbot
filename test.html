@@ -250,34 +250,103 @@
     <!-- Chatbot Integration Scripts -->
     <script src="https://cdn.botpress.cloud/webchat/v2.2/inject.js"></script>
     <script src="https://files.bpcontent.cloud/2024/10/12/11/20241012114508-FMJPRO9S.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.9.359/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
     <script>
-      window.botpress.on("messageSent", (message) => {
-        console.log("Message sent:", message);
-        if (message.value.payload.text === "Please upload your file") {
+      window.botpress.on("message", (message) => {
+        console.log("Message Received:", message);
+        if (message.payload.block.text === "Please upload your file") {
           const fileInput = document.createElement("input");
           fileInput.type = "file";
           fileInput.addEventListener("change", (event) => {
             const file = event.target.files[0];
             console.log("Selected file:", file);
-            const reader = new FileReader();
-            reader.onload = async function (event) {
-              const fileContent = event.target.result;
-              const title = file.name;
-              console.log("File content:", fileContent);
-              console.log("File name:", title);
-              window.botpress.sendEvent({
-                type: "trigger",
-                payload: {
-                  title: title,
-                  content: fileContent,
-                },
-              });
-            };
-            reader.readAsText(file);
+    
+            if (file.name.endsWith(".docx")) {
+              // Correct the way the file is read as an ArrayBuffer for mammoth.js
+              const reader = new FileReader();
+              reader.onload = function(event) {
+                const arrayBuffer = event.target.result;
+                mammoth.extractRawText({ arrayBuffer: arrayBuffer })
+                  .then(function(result) {
+                    const fileContent = result.value; // Extracted text
+                    const title = file.name;
+                    console.log("File content:", fileContent);
+                    console.log("File name:", title);
+                    window.botpress.sendEvent({
+                      type: "trigger",
+                      payload: {
+                        title: title,
+                        content: fileContent,
+                      },
+                    });
+                  })
+                  .catch(function(err) {
+                    console.error("Error reading .docx file:", err);
+                  });
+              };
+              reader.readAsArrayBuffer(file);  // Make sure to read as ArrayBuffer
+            } else if (file.name.endsWith(".txt")) {
+              // Handle plain text files using FileReader
+              const reader = new FileReader();
+              reader.onload = async function(event) {
+                const fileContent = event.target.result;
+                const title = file.name;
+                console.log("File content:", fileContent);
+                console.log("File name:", title);
+                window.botpress.sendEvent({
+                  type: "trigger",
+                  payload: {
+                    title: title,
+                    content: fileContent,
+                  },
+                });
+              };
+              reader.readAsText(file);
+            } else if (file.name.endsWith(".pdf")) {
+              // Handle PDF files using pdf.js
+              const fileReader = new FileReader();
+              fileReader.onload = async function() {
+                const typedarray = new Uint8Array(this.result);
+    
+                pdfjsLib.getDocument(typedarray).promise.then(function(pdf) {
+                  let pagesPromises = [];
+    
+                  for (let i = 1; i <= pdf.numPages; i++) {
+                    pagesPromises.push(
+                      pdf.getPage(i).then(function(page) {
+                        return page.getTextContent().then(function(textContent) {
+                          return textContent.items
+                            .map((item) => item.str)
+                            .join(" ");
+                        });
+                      })
+                    );
+                  }
+    
+                  Promise.all(pagesPromises).then((pagesText) => {
+                    const fileContent = pagesText.join("\n");
+                    const title = file.name;
+                    console.log("File content:", fileContent);
+                    console.log("File name:", title);
+                    window.botpress.sendEvent({
+                      type: "trigger",
+                      payload: {
+                        title: title,
+                        content: fileContent,
+                      },
+                    });
+                  });
+                });
+              };
+              fileReader.readAsArrayBuffer(file);
+            } else {
+              console.error("Unsupported file type");
+            }
           });
           fileInput.click();
         }
       });
-    </script>
+    </script>    
   </body>
 </html>
